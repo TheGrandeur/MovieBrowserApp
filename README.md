@@ -12,7 +12,7 @@ A React Native app built with Expo for browsing trending movies.
 ## 🛠️ Tech Stack
 - React Native + Expo
 - React Navigation
-- Axios for API requests
+- Axios for API requests (https://www.themoviedb.org/)
 - AsyncStorage for favorites
 
 ## 📱 Screenshots
