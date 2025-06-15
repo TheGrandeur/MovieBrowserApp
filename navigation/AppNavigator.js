@@ -11,7 +11,7 @@ export default function AppNavigator() {
     <Stack.Navigator initialRouteName="Home">
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Favorites" component={FavoritesScreen} />
-      <Stack.Screen name="MovieDetail" component={MovieDetailScreen} />
+      <Stack.Screen name="MovieDetailScreen" component={MovieDetailScreen} />
     </Stack.Navigator>
   );
 }
