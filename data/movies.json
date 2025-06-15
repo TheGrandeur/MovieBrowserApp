@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "title": "Inception",
+    "image": "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
+    "description": "A skilled thief leads a team into dreams."
+  },
+  {
+    "id": 2,
+    "title": "Interstellar",
+    "image": "https://image.tmdb.org/t/p/w500/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg",
+    "description": "A journey through space to save humanity."
+  }
+]
