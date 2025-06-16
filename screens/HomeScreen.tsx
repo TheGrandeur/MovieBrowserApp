@@ -1,63 +1,72 @@
-// screens/HomeScreen.tsx
+// ✅ Phase 4: Category Filtering (Genre Dropdown)
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import React, { useEffect, useState } from 'react';
+import debounce from 'lodash.debounce';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import {
   FlatList,
   Image,
   Keyboard,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
-  useColorScheme
+  useColorScheme,
 } from 'react-native';
 import { getPopularMovies, searchMovies } from '../services/api';
 import type { Movie, RootStackParamList } from '../types/navigation';
+
+const GENRES = [
+  { id: 28, name: 'Action' },
+  { id: 35, name: 'Comedy' },
+  { id: 18, name: 'Drama' },
+  { id: 27, name: 'Horror' },
+  { id: 10749, name: 'Romance' },
+];
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
-
   const [searchQuery, setSearchQuery] = useState('');
   const [movies, setMovies] = useState<Movie[]>([]);
   const [page, setPage] = useState(1);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState<number | null>(null);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-
   const styles = getStyles(isDark);
 
-  const fetchMovies = async (reset = false) => {
-    const results = searchQuery
-      ? await searchMovies(searchQuery)
-      : await getPopularMovies(reset ? 1 : page);
-
-    setMovies(reset ? results : [...movies, ...results]);
-  };
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Favorites')}
+          style={{ marginRight: 16 }}
+        >
+          <Ionicons name="heart" size={24} color="skyblue" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   useEffect(() => {
     fetchMovies(true);
-  }, [page]);
+  }, [page, selectedGenre]);
 
   useEffect(() => {
     AsyncStorage.getItem('favorites').then((data) => {
-      if (data) {
-        const ids: number[] = JSON.parse(data);
-        setFavorites(ids);
-      }
+      if (data) setFavorites(JSON.parse(data));
     });
-
     AsyncStorage.getItem('searchHistory').then((data) => {
-      if (data) {
-        setSearchHistory(JSON.parse(data));
-      }
+      if (data) setSearchHistory(JSON.parse(data));
     });
   }, []);
 
@@ -69,28 +78,40 @@ export default function HomeScreen() {
     await AsyncStorage.setItem('favorites', JSON.stringify(updated));
   };
 
-  const handleSearch = async () => {
-    if (searchQuery.trim()) {
-      const results = await searchMovies(searchQuery);
-      setMovies(results);
+  const fetchMovies = async (reset = false) => {
+    const results = searchQuery
+      ? await searchMovies(searchQuery)
+      : await getPopularMovies(reset ? 1 : page);
+    const filtered = selectedGenre
+      ? results.filter((movie: Movie) => movie.genre_ids.includes(selectedGenre))
+      : results;
+    setMovies(reset ? filtered : [...movies, ...filtered]);
+  };
 
-      if (!searchHistory.includes(searchQuery)) {
-        const updatedHistory = [searchQuery, ...searchHistory].slice(0, 5);
-        setSearchHistory(updatedHistory);
-        await AsyncStorage.setItem('searchHistory', JSON.stringify(updatedHistory));
-      }
-    } else {
-      const popular = await getPopularMovies(1);
-      setMovies(popular);
+  const debouncedSearch = debounce(async (text: string) => {
+    const results = await searchMovies(text);
+    const filtered = selectedGenre
+      ? results.filter((movie: Movie) => movie.genre_ids.includes(selectedGenre))
+      : results;
+    setMovies(filtered);
+
+    if (text.trim() && !searchHistory.includes(text)) {
+      const updatedHistory = [text, ...searchHistory].slice(0, 5);
+      setSearchHistory(updatedHistory);
+      await AsyncStorage.setItem('searchHistory', JSON.stringify(updatedHistory));
     }
-    setPage(1); // Reset pagination on search
+  }, 300);
+
+  const handleSearchInput = (text: string) => {
+    setSearchQuery(text);
+    debouncedSearch(text);
   };
 
   const renderItem = ({ item }: { item: Movie }) => (
     <View style={styles.cardWrapper}>
       <TouchableOpacity
         style={styles.card}
-        onPress={() => navigation.navigate('MovieDetailScreen', { item })} // ✅ FIXED HERE
+        onPress={() => navigation.navigate('MovieDetailScreen', { item })}
         activeOpacity={0.9}
       >
         <Image
@@ -98,6 +119,7 @@ export default function HomeScreen() {
           style={styles.image}
         />
         <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.rating}>⭐ {item.vote_average?.toFixed(1)}</Text>
         <Text style={styles.description}>{item.overview.slice(0, 60)}...</Text>
       </TouchableOpacity>
 
@@ -126,15 +148,29 @@ export default function HomeScreen() {
           placeholder="Search movies..."
           placeholderTextColor={isDark ? '#aaa' : '#555'}
           value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={handleSearch}
+          onChangeText={handleSearchInput}
         />
+
+        <ScrollView horizontal style={styles.genreBar} showsHorizontalScrollIndicator={false}>
+          {GENRES.map((genre) => (
+            <Pressable
+              key={genre.id}
+              onPress={() => setSelectedGenre(selectedGenre === genre.id ? null : genre.id)}
+              style={[
+                styles.genreButton,
+                selectedGenre === genre.id && styles.genreSelected,
+              ]}
+            >
+              <Text style={styles.genreText}>{genre.name}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
 
         {searchHistory.length > 0 && searchQuery.length === 0 && (
           <View style={styles.historyContainer}>
             <Text style={styles.historyTitle}>Recent Searches:</Text>
             {searchHistory.map((query, index) => (
-              <TouchableOpacity key={index} onPress={() => { setSearchQuery(query); handleSearch(); }}>
+              <TouchableOpacity key={index} onPress={() => handleSearchInput(query)}>
                 <Text style={styles.historyItem}>🔍 {query}</Text>
               </TouchableOpacity>
             ))}
@@ -160,20 +196,38 @@ const getStyles = (isDark: boolean) =>
     container: {
       flex: 1,
       backgroundColor: isDark ? '#000' : '#fff',
-      padding: 20
+      padding: 20,
     },
     searchBar: {
       backgroundColor: isDark ? '#1a1a1a' : '#f0f0f0',
       color: isDark ? '#fff' : '#000',
       padding: 10,
       borderRadius: 8,
-      marginBottom: 15
+      marginBottom: 10,
+    },
+    genreBar: {
+      flexDirection: 'row',
+      marginBottom: 10,
+    },
+    genreButton: {
+      backgroundColor: '#ccc',
+      borderRadius: 20,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      marginRight: 8,
+    },
+    genreSelected: {
+      backgroundColor: '#007AFF',
+    },
+    genreText: {
+      color: '#fff',
+      fontWeight: 'bold',
     },
     cardWrapper: {
       position: 'relative',
       flex: 1,
       maxWidth: '48%',
-      margin: 5
+      margin: 5,
     },
     card: {
       backgroundColor: isDark ? '#111' : '#fff',
@@ -183,33 +237,39 @@ const getStyles = (isDark: boolean) =>
       shadowOpacity: 0.1,
       shadowOffset: { width: 0, height: 2 },
       shadowRadius: 5,
-      elevation: 3
+      elevation: 3,
     },
     image: {
       width: '100%',
       height: 180,
       borderRadius: 10,
-      marginBottom: 10
+      marginBottom: 10,
     },
     title: {
       fontSize: 16,
       fontWeight: 'bold',
-      color: isDark ? '#fff' : '#000'
+      color: isDark ? '#fff' : '#000',
+    },
+    rating: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#ffcc00',
+      marginVertical: 4,
     },
     description: {
       fontSize: 12,
-      color: isDark ? '#ccc' : '#666'
+      color: isDark ? '#ccc' : '#666',
     },
     historyContainer: {
-      marginBottom: 10
+      marginBottom: 10,
     },
     historyTitle: {
       fontWeight: 'bold',
-      color: isDark ? '#fff' : '#000'
+      color: isDark ? '#fff' : '#000',
     },
     historyItem: {
       color: isDark ? '#ccc' : '#444',
-      marginVertical: 2
+      marginVertical: 2,
     },
     favoriteIcon: {
       position: 'absolute',
@@ -218,6 +278,6 @@ const getStyles = (isDark: boolean) =>
       zIndex: 2,
       backgroundColor: 'rgba(0,0,0,0.4)',
       borderRadius: 20,
-      padding: 4
-    }
+      padding: 4,
+    },
   });

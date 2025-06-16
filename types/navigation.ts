@@ -1,14 +1,14 @@
 // types/navigation.ts
-
 export interface Movie {
   id: number;
   title: string;
-  poster_path: string;
   overview: string;
+  poster_path: string;
+  [key: string]: any; // to allow other dynamic fields
 }
 
 export type RootStackParamList = {
   Home: undefined;
-  MovieDetailScreen: { item: Movie };
   Favorites: undefined;
+  MovieDetailScreen: { item: Movie };
 };
