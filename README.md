@@ -16,11 +16,15 @@ A React Native app built with Expo for browsing trending movies.
 - AsyncStorage for favorites
 
 ## 📱 Screenshots
-****Desktop:**
-**<img width="1430" alt="image" src="https://github.com/user-attachments/assets/cb7b0c54-45f5-472c-9f46-1c1cc6bedb89" />
+**Desktop:**
+<img width="1430" alt="image" src="https://github.com/user-attachments/assets/cb7b0c54-45f5-472c-9f46-1c1cc6bedb89" />
 
-****Mobile:**
-**![image](https://github.com/user-attachments/assets/5a9a472b-343d-4243-b215-50579dfb6a85)
+------------------------------------------------------------------------------------------------
+
+
+
+**Mobile:**
+![image](https://github.com/user-attachments/assets/5a9a472b-343d-4243-b215-50579dfb6a85)
 
 
 
