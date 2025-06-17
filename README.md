@@ -28,19 +28,3 @@ yarn start
 
 Developed By
 Vaibhav Gupta
-
----
-
-### 6. **Record and Submit Video (if required)**
-- Keep it < 3 mins
-- Demo features & code briefly
-- Use **Loom** or **OBS + upload to Google Drive/YouTube**
-
----
-
-### Need Help With?
-- README file generation?
-- Final code audit/cleanup?
-- Video script?
-
-Just say the word and I’ll help you wrap it up like a pro. 💼✅
